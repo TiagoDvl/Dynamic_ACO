@@ -8,7 +8,7 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		ACO aco = new ACO("berlin52.tsp");
+		ACO aco = new ACO("04_luxembourg980.tsp");
 		try {
 			aco.start();
 		} catch (IOException e) {
