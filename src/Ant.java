@@ -88,7 +88,8 @@ public class Ant implements Runnable {
 		int  i, next, lastNode;
 		
 		i = 0;
-		next = lastNode = start;
+		next = start;
+		lastNode = this.instance.getProblem().length-1;
 		
 		while((next = this.getNextNode(lastNode)) != -1) {
 			this.way[i++] = lastNode;

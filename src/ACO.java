@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -10,12 +11,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class ACO {
 
-	private static final int MAX_ANTS = 2048 * 20;
+	// private static final int MAX_ANTS = 2048 * 20;
+	private static final int MAX_ANTS = 2;
 	private final String TSP_FILE;
 	private double[][] problem;
 	private double[][] pheromones;
 	private Random random;
 	private ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+	private ScheduledTask task;
 
 	private LinkedBlockingQueue<AntResult> results;
 
@@ -151,10 +154,11 @@ public class ACO {
 			System.out.printf("%s\n", best);
 	}
 
-	private void findBestWay() {
+	private ArrayList<AntResult> findBestWay() {
 
 		ArrayList<AntResult> partialResult = new ArrayList<AntResult>(ACO.MAX_ANTS);
 		for (int i = 0; i < ACO.MAX_ANTS; i++)
+			// this.service.execute(new Ant(this, this.random.nextInt(this.problem.length)));
 			this.service.execute(new Ant(this, this.random.nextInt(this.problem.length)));
 
 		for (int i = 0, j = 0; i < ACO.MAX_ANTS; i++, j++) {
@@ -163,8 +167,8 @@ public class ACO {
 				partialResult.add(ar);
 
 				// Pretty cool
-				if (j % 10000 == 0){
-					this.printBest(partialResult);
+				if (j % 10000 == 0) {
+					// this.printBest(partialResult);
 				}
 
 			} catch (InterruptedException e) {
@@ -174,7 +178,8 @@ public class ACO {
 
 		System.out.printf("----Final Result----\n");
 		this.printBest(partialResult);
-		this.service.shutdown();
+
+		return partialResult;
 	}
 
 	private final double calculatePheromones(double current, double newPheromone) {
@@ -196,17 +201,38 @@ public class ACO {
 	}
 
 	public void start() throws IOException {
+		ArrayList<AntResult> partialResult;
 		this.problem = this.readMatrixFromFile();
 		this.pheromones = this.initializePheromones();
-		this.findBestWay();
+		partialResult = this.findBestWay();
+
+		try {
+			while (partialResult.get(0).getWay().length != 0) {
+
+				task = new ScheduledTask(this.problem);
+				this.problem = task.runThis();
+
+				System.out.println("Problem Size -> " + this.problem.length);
+				this.problem = Arrays.copyOfRange(this.problem, partialResult.get(0).getWay()[1], this.problem.length - 1);
+				partialResult = this.findBestWay();
+
+			}
+
+		} catch (ArrayIndexOutOfBoundsException e) {
+			this.service.shutdown();
+		} catch (IllegalArgumentException e) {
+			this.service.shutdown();
+		} finally {
+			this.service.shutdown();
+		}
 
 		// Print the matrix with all the distance values.
-		for (int i = 0; i < problem.length; i++) {
-			for (int j = 0; j < problem[i].length; j++) {
-				System.out.printf("%g\t", problem[i][j]);
-			}
-			System.out.printf("\n");
-		}
+		// for (int i = 0; i < problem.length; i++) {
+		// for (int j = 0; j < problem[i].length; j++) {
+		// System.out.printf("%g\t", problem[i][j]);
+		// }
+		// System.out.printf("\n");
+		// }
 
 	}
 
